@@ -1,4 +1,4 @@
-package com.vidya.payload;
+package com.vidya.payload.request;
 
 import javax.validation.constraints.NotBlank;
 

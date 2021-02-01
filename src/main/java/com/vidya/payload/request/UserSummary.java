@@ -1,4 +1,4 @@
-package com.vidya.payload;
+package com.vidya.payload.request;
 
 public class UserSummary {
     private Long id;

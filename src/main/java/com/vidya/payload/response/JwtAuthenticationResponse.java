@@ -1,4 +1,4 @@
-package com.vidya.payload;
+package com.vidya.payload.response;
 
 public class JwtAuthenticationResponse {
     private String accessToken;

@@ -23,16 +23,16 @@ import com.vidya.enums.RoleName;
 import com.vidya.exception.AppException;
 import com.vidya.model.Role;
 import com.vidya.model.User;
-import com.vidya.payload.ApiResponse;
-import com.vidya.payload.JwtAuthenticationResponse;
-import com.vidya.payload.LoginRequest;
-import com.vidya.payload.SignUpRequest;
+import com.vidya.payload.request.LoginRequest;
+import com.vidya.payload.request.SignUpRequest;
+import com.vidya.payload.response.ApiResponse;
+import com.vidya.payload.response.JwtAuthenticationResponse;
 import com.vidya.repository.RoleRepository;
 import com.vidya.repository.UserRepository;
 import com.vidya.security.JwtTokenProvider;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     @Autowired

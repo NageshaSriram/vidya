@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.vidya.payload.UserSummary;
+import com.vidya.payload.request.UserSummary;
 import com.vidya.security.CurrentUser;
 import com.vidya.security.UserPrincipal;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/")
 public class UserController {
 	
 	 private static final Logger logger = LoggerFactory.getLogger(UserController.class);
