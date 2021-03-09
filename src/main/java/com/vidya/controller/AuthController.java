@@ -1,7 +1,6 @@
 package com.vidya.controller;
 
 import java.net.URI;
-import java.util.Collections;
 
 import javax.validation.Valid;
 
@@ -19,14 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.vidya.enums.RoleName;
-import com.vidya.exception.AppException;
-import com.vidya.model.Role;
 import com.vidya.model.User;
 import com.vidya.payload.request.LoginRequest;
 import com.vidya.payload.request.SignUpRequest;
 import com.vidya.payload.response.ApiResponse;
 import com.vidya.payload.response.JwtAuthenticationResponse;
+import com.vidya.repository.OrganizationRepository;
 import com.vidya.repository.RoleRepository;
 import com.vidya.repository.UserRepository;
 import com.vidya.security.JwtTokenProvider;
@@ -35,66 +32,63 @@ import com.vidya.security.JwtTokenProvider;
 @RequestMapping("/auth")
 public class AuthController {
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+	@Autowired
+	AuthenticationManager authenticationManager;
 
-    @Autowired
-    UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-    @Autowired
-    RoleRepository roleRepository;
+	@Autowired
+	RoleRepository roleRepository;
 
-    @Autowired
-    PasswordEncoder passwordEncoder;
+	@Autowired
+	PasswordEncoder passwordEncoder;
 
-    @Autowired
-    JwtTokenProvider tokenProvider;
+	@Autowired
+	JwtTokenProvider tokenProvider;
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+	@Autowired
+	OrganizationRepository organizationRepository;
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsernameOrEmail(),
-                        loginRequest.getPassword()
-                )
-        );
+	@PostMapping("/signin")
+	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(loginRequest.getUsernameOrEmail(), loginRequest.getPassword()));
 
-        String jwt = tokenProvider.generateToken(authentication);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
-    }
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+
+		String jwt = tokenProvider.generateToken(authentication);
+		return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+	}
 
 	@PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
-        if(userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return new ResponseEntity<Object>(new ApiResponse(false, "Username is already taken!"),
-                    HttpStatus.BAD_REQUEST);
-        }
+	public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
 
-        if(userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return new ResponseEntity<Object>(new ApiResponse(false, "Email Address already in use!"),
-                    HttpStatus.BAD_REQUEST);
-        }
+		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+			return new ResponseEntity<Object>(new ApiResponse(false, "Username is already taken!"),
+					HttpStatus.BAD_REQUEST);
+		}
 
-        // Creating user's account
-        User user = new User(signUpRequest.getName(), signUpRequest.getUsername(),
-                signUpRequest.getEmail(), signUpRequest.getPassword());
+		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+			return new ResponseEntity<Object>(new ApiResponse(false, "Email Address already in use!"),
+					HttpStatus.BAD_REQUEST);
+		}
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+		// Creating user's account
+		User user = new User(signUpRequest.getName(), signUpRequest.getUsername(), signUpRequest.getEmail(),
+				signUpRequest.getPassword());
 
-        Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
-                .orElseThrow(() -> new AppException("User Role not set."));
+		user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        user.setRoles(Collections.singleton(userRole));
+		user.setRole(roleRepository.findById(signUpRequest.getRoleId()).get());
+		user.setOrganization(organizationRepository.findById(signUpRequest.getOrgId()).get());
 
-        User result = userRepository.save(user);
+		User result = userRepository.save(user);
 
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath().path("/api/users/{username}")
-                .buildAndExpand(result.getUsername()).toUri();
+		URI location = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/users/{username}")
+				.buildAndExpand(result.getUsername()).toUri();
 
-        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
-    }
+		return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
+	}
 }

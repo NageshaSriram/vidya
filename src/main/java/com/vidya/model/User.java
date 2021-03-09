@@ -3,27 +3,29 @@ package com.vidya.model;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
+import javax.validation.Valid;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
-import org.hibernate.annotations.NaturalId;
-
 import com.vidya.model.audit.DateAudit;
+import com.vidya.payload.request.SignUpRequest;
 
 @Entity
-@Table(name = "users", uniqueConstraints = { @UniqueConstraint(columnNames = { "username" }),
-		@UniqueConstraint(columnNames = { "email" }) })
+@Table(name = "users", uniqueConstraints = { @UniqueConstraint(columnNames = { "username", "organization_id" }),
+		@UniqueConstraint(columnNames = { "email", "organization_id" }) })
 public class User extends DateAudit {
 	/**
 	 * 
@@ -42,7 +44,6 @@ public class User extends DateAudit {
 	@Size(max = 15)
 	private String username;
 
-	@NaturalId
 	@NotBlank
 	@Size(max = 40)
 	@Email
@@ -52,9 +53,23 @@ public class User extends DateAudit {
 	@Size(max = 100)
 	private String password;
 
-	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-	private Set<Role> roles = new HashSet<>();
+	@NotNull
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "organization_id")
+	private Organization organization;
+
+	@NotNull
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "role_id")
+	private Role role;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "classes_id")
+	private Classes classes;
+	
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user")
+	private Set<Feedback> feedbacks = new HashSet<>();
+	
 
 	public User() {
 
@@ -65,6 +80,14 @@ public class User extends DateAudit {
 		this.username = username;
 		this.email = email;
 		this.password = password;
+	}
+
+	public User(@Valid SignUpRequest signUpRequest) {
+		this.name = signUpRequest.getName();
+		this.username = signUpRequest.getUsername();
+		this.email = signUpRequest.getEmail();
+		this.password = signUpRequest.getPassword();
+		this.id = signUpRequest.getUserId();
 	}
 
 	public Long getId() {
@@ -107,11 +130,28 @@ public class User extends DateAudit {
 		this.password = password;
 	}
 
-	public Set<Role> getRoles() {
-		return roles;
+	public Organization getOrganization() {
+		return organization;
 	}
 
-	public void setRoles(Set<Role> roles) {
-		this.roles = roles;
+	public void setOrganization(Organization organization) {
+		this.organization = organization;
 	}
+
+	public Role getRole() {
+		return role;
+	}
+
+	public void setRole(Role role) {
+		this.role = role;
+	}
+
+	public Classes getClasses() {
+		return classes;
+	}
+
+	public void setClasses(Classes classes) {
+		this.classes = classes;
+	}
+
 }
